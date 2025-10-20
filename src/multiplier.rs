@@ -18,7 +18,7 @@ pub fn multiplier(a: u32, b: u32) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use crate::multiplier::multiplier;
+    use super::*;
 
     #[test]
     fn test_multiplier_with_loop() {

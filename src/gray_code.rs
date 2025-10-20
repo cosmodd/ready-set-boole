@@ -13,7 +13,7 @@ pub fn gray_code(n: u32) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use crate::gray_code::gray_code;
+    use super::*;
 
     #[test]
     fn test_gray_code() {
