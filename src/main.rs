@@ -15,4 +15,6 @@ fn main() {
 
     let result = rpn::eval_formula("10|");
     println!("rpn eval of '10|' = {}", result);
+    let result = rpn::eval_formula("10|!");
+    println!("rpn eval of '10|!' = {}", result);
 }
