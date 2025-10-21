@@ -1,6 +1,7 @@
 mod adder;
 mod multiplier;
 mod gray_code;
+mod rpn;
 
 fn main() {
     let result = adder::adder(57, 12);
@@ -11,4 +12,7 @@ fn main() {
 
     let result = gray_code::gray_code(57);
     println!("gray code of 57 = {}", result);
+
+    let result = rpn::eval_formula("10|");
+    println!("rpn eval of '10|' = {}", result);
 }
