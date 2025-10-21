@@ -1,11 +1,12 @@
+use std::collections::HashSet;
 use crate::rpn::eval_formula;
 
 pub fn print_truth_table(formula: &str) {
-    let mut letters: Vec<char> = Vec::new();
+    let mut letters = HashSet::<char>::new();
 
     for c in formula.chars() {
         if c >= 'A' && c <= 'Z' {
-            letters.push(c);
+            letters.insert(c);
         }
     }
 
@@ -15,7 +16,7 @@ pub fn print_truth_table(formula: &str) {
         return;
     }
 
-    let mut columns = letters.clone();
+    let mut columns = letters.iter().cloned().collect::<Vec<char>>();
     columns.push('=');
 
     let header = columns
