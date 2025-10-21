@@ -2,6 +2,7 @@ mod adder;
 mod multiplier;
 mod gray_code;
 mod rpn;
+mod truth_table;
 
 fn main() {
     let result = adder::adder(57, 12);
@@ -13,8 +14,8 @@ fn main() {
     let result = gray_code::gray_code(57);
     println!("gray code of 57 = {}", result);
 
-    let result = rpn::eval_formula("10|");
-    println!("rpn eval of '10|' = {}", result);
     let result = rpn::eval_formula("10|!");
     println!("rpn eval of '10|!' = {}", result);
+
+    truth_table::print_truth_table("AB&CD&|")
 }
