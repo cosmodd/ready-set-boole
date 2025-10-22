@@ -1,6 +1,7 @@
 #[derive(Debug)]
 pub enum ASTNode {
-    Token(char),
+    Number(u32),
+    Variable(char),
     UnaryOp {
         operator: char,
         child: Box<ASTNode>
@@ -13,8 +14,12 @@ pub enum ASTNode {
 }
 
 impl ASTNode {
-    fn token(n: char) -> Self {
-        ASTNode::Token(n)
+    fn number(n: u32) -> ASTNode {
+        ASTNode::Number(n)
+    }
+
+    fn variable(c: char) -> ASTNode {
+        ASTNode::Variable(c)
     }
 
     fn unary_op(operator: char, child: Self) -> Self {
@@ -37,8 +42,10 @@ pub fn parse_boolean_rpn(formula: &str) -> Option<ASTNode> {
     let mut stack: Vec<ASTNode> = Vec::new();
 
     for c in formula.chars() {
-        if c.is_ascii_alphanumeric() {
-            stack.push(ASTNode::token(c.to_ascii_uppercase()));
+        if c.is_ascii_digit() {
+            stack.push(ASTNode::Number(c.to_digit(10).unwrap()));
+        } else if c.is_ascii_alphabetic() {
+            stack.push(ASTNode::variable(c.to_ascii_uppercase()));
         } else if "!".contains(c) {
             let child = stack.pop()?;
             stack.push(ASTNode::unary_op(c, child));
@@ -65,13 +72,14 @@ pub fn print_ast(root: &ASTNode, level: usize) {
     }
 
     match root {
-        ASTNode::Token(c) => { println!("{}{}", prefix, c) },
+        ASTNode::Number(c) => { println!("{}{} (number)", prefix, c) },
+        ASTNode::Variable(c) => { println!("{}{} (var)", prefix, c) },
         ASTNode::UnaryOp { operator, child } => {
-            println!("{}{}", prefix, operator);
+            println!("{}{} (un_op)", prefix, operator);
             print_ast(child, level + 1);
         }
         ASTNode::BinaryOp { operator, left, right } => {
-            println!("{}{}", prefix, operator);
+            println!("{}{} (bin_op)", prefix, operator);
             print_ast(right, level + 1);
             print_ast(left, level + 1);
         }
