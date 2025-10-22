@@ -3,6 +3,7 @@ mod multiplier;
 mod gray_code;
 mod rpn;
 mod truth_table;
+mod ast;
 
 fn main() {
     let result = adder::adder(57, 12);
