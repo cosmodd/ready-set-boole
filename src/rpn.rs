@@ -1,3 +1,6 @@
+use crate::ast::ASTNode::UnaryOp;
+use crate::ast::{ast_to_rpn, normalize_ast, parse_boolean_rpn, ASTNode};
+
 pub fn eval_formula(formula: &str) -> bool {
     let mut stack: Vec<bool> = Vec::new();
 
@@ -42,6 +45,51 @@ pub fn eval_formula(formula: &str) -> bool {
     stack.last().unwrap().clone()
 }
 
+fn expand_negations(node: &ASTNode) -> ASTNode {
+    match node {
+        ASTNode::UnaryOp { operator: '!', child } => {
+            match &**child {
+                ASTNode::UnaryOp { operator: '!', child: inner } => expand_negations(inner),
+                ASTNode::BinaryOp { operator: '&', left, right } => {
+                    ASTNode::BinaryOp {
+                        operator: '|',
+                        left: Box::new(expand_negations(&UnaryOp {
+                            operator: '!',
+                            child: left.clone(),
+                        })),
+                        right: Box::new(expand_negations(&UnaryOp {
+                            operator: '!',
+                            child: right.clone()
+                        })),
+                    }
+                },
+                ASTNode::BinaryOp { operator: '|', left, right } => {
+                    ASTNode::BinaryOp {
+                        operator: '&',
+                        left: Box::new(expand_negations(&UnaryOp {
+                            operator: '!',
+                            child: left.clone(),
+                        })),
+                        right: Box::new(expand_negations(&UnaryOp {
+                            operator: '!',
+                            child: right.clone()
+                        })),
+                    }
+                }
+                _ => node.clone()
+            }
+        }
+        _ => node.clone()
+    }
+}
+
+pub fn negation_normal_form(formula: &str) -> String {
+    let ast = parse_boolean_rpn(formula).unwrap();
+    let norm = normalize_ast(&ast);
+    let exp_negations = expand_negations(&norm);
+    ast_to_rpn(&exp_negations)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -54,5 +102,14 @@ mod tests {
         assert_eq!(eval_formula("11>"), true);
         assert_eq!(eval_formula("10="), false);
         assert_eq!(eval_formula("1011||="), true);
+    }
+
+    #[test]
+    fn test_negation_normal_form() {
+        assert_eq!(negation_normal_form("AB&!"), "A!B!|");
+        assert_eq!(negation_normal_form("AB|!"), "A!B!&");
+        assert_eq!(negation_normal_form("AB>"), "A!B|");
+        assert_eq!(negation_normal_form("AB="), "A!B|B!A|&");
+        assert_eq!(negation_normal_form("AB|C&!"), "A!B!&C!|");
     }
 }

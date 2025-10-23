@@ -1,3 +1,6 @@
+use crate::ast::{ast_to_rpn, normalize_ast, parse_boolean_rpn};
+use crate::rpn::negation_normal_form;
+
 mod adder;
 mod multiplier;
 mod gray_code;
@@ -18,5 +21,10 @@ fn main() {
     let result = rpn::eval_formula("10|!");
     println!("rpn eval of '10|!' = {}", result);
 
-    truth_table::print_truth_table("AB&CD&|")
+    truth_table::print_truth_table("AZ&A!Z!&|");
+
+    let formula = "AB=";
+    let ast = parse_boolean_rpn(formula).unwrap();
+    println!("norm(\"{}\") = \"{}\"", formula, ast_to_rpn(&normalize_ast(&ast)));
+    println!("neg(\"{}\") = \"{}\"", formula, negation_normal_form(formula));
 }
