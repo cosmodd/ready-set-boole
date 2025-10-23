@@ -115,6 +115,22 @@ pub fn normalize_ast(node: &ASTNode) -> ASTNode {
     }
 }
 
+pub fn ast_to_rpn(node: &ASTNode) -> String {
+    match node {
+        ASTNode::Number(n) => n.to_string(),
+        ASTNode::Variable(c) => c.to_string(),
+        ASTNode::UnaryOp { operator, child } => {
+            let child_rpn = ast_to_rpn(child);
+            format!("{}{}", child_rpn, operator)
+        },
+        ASTNode::BinaryOp { operator, left, right } => {
+            let left_rpn = ast_to_rpn(left);
+            let right_rpn = ast_to_rpn(right);
+            format!("{}{}{}", left_rpn, right_rpn, operator)
+        }
+    }
+}
+
 pub fn print_ast(root: &ASTNode, level: usize) {
     let mut prefix = "  ".repeat(level);
 
