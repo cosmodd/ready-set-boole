@@ -63,11 +63,11 @@ pub fn parse_boolean_rpn(formula: &str) -> Option<ASTNode> {
     }
 }
 
-pub fn normalize_ast(node: ASTNode) -> ASTNode {
+pub fn normalize_ast(node: &ASTNode) -> ASTNode {
     match node {
         ASTNode::BinaryOp { operator: '>', left, right} => {
-            let left_norm = normalize_ast(*left);
-            let right_norm = normalize_ast(*right);
+            let left_norm = normalize_ast(left);
+            let right_norm = normalize_ast(right);
             ASTNode::BinaryOp {
                 operator: '|',
                 left: Box::new(ASTNode::UnaryOp {
@@ -79,16 +79,16 @@ pub fn normalize_ast(node: ASTNode) -> ASTNode {
         },
 
         ASTNode::BinaryOp { operator: '=', left, right} => {
-            let left_norm = normalize_ast(*left);
-            let right_norm = normalize_ast(*right);
+            let left_norm = normalize_ast(left);
+            let right_norm = normalize_ast(right);
             ASTNode::BinaryOp {
                 operator: '&',
-                left: Box::new(normalize_ast(ASTNode::BinaryOp {
+                left: Box::new(normalize_ast(&ASTNode::BinaryOp {
                     operator: '>',
                     left: Box::new(left_norm.clone()),
                     right: Box::new(right_norm.clone())
                 })),
-                right: Box::new(normalize_ast(ASTNode::BinaryOp {
+                right: Box::new(normalize_ast(&ASTNode::BinaryOp {
                     operator: '>',
                     left: Box::new(right_norm),
                     right: Box::new(left_norm)
@@ -98,20 +98,20 @@ pub fn normalize_ast(node: ASTNode) -> ASTNode {
 
         ASTNode::UnaryOp { operator, child } => {
             ASTNode::UnaryOp {
-                operator,
-                child: Box::new(normalize_ast(*child))
+                operator: *operator,
+                child: Box::new(normalize_ast(child))
             }
         }
 
-        ASTNode::BinaryOp { operator, left, right } if "&|".contains(operator) => {
+        ASTNode::BinaryOp { operator, left, right } if "&|".contains(*operator) => {
             ASTNode::BinaryOp {
-                operator,
-                left: Box::new(normalize_ast(*left)),
-                right: Box::new(normalize_ast(*right)),
+                operator: *operator,
+                left: Box::new(normalize_ast(left)),
+                right: Box::new(normalize_ast(right)),
             }
         }
 
-        _ => node
+        _ => node.clone()
     }
 }
 
