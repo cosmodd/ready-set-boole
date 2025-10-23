@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ASTNode {
     Number(u32),
     Variable(char),
@@ -60,6 +60,58 @@ pub fn parse_boolean_rpn(formula: &str) -> Option<ASTNode> {
         None
     } else {
         Some(stack.pop().unwrap())
+    }
+}
+
+pub fn normalize_ast(node: ASTNode) -> ASTNode {
+    match node {
+        ASTNode::BinaryOp { operator: '>', left, right} => {
+            let left_norm = normalize_ast(*left);
+            let right_norm = normalize_ast(*right);
+            ASTNode::BinaryOp {
+                operator: '|',
+                left: Box::new(ASTNode::UnaryOp {
+                    operator: '!',
+                    child: Box::new(left_norm),
+                }),
+                right: Box::new(right_norm)
+            }
+        },
+
+        ASTNode::BinaryOp { operator: '=', left, right} => {
+            let left_norm = normalize_ast(*left);
+            let right_norm = normalize_ast(*right);
+            ASTNode::BinaryOp {
+                operator: '&',
+                left: Box::new(normalize_ast(ASTNode::BinaryOp {
+                    operator: '>',
+                    left: Box::new(left_norm.clone()),
+                    right: Box::new(right_norm.clone())
+                })),
+                right: Box::new(normalize_ast(ASTNode::BinaryOp {
+                    operator: '>',
+                    left: Box::new(right_norm),
+                    right: Box::new(left_norm)
+                }))
+            }
+        }
+
+        ASTNode::UnaryOp { operator, child } => {
+            ASTNode::UnaryOp {
+                operator,
+                child: Box::new(normalize_ast(*child))
+            }
+        }
+
+        ASTNode::BinaryOp { operator, left, right } if "&|".contains(operator) => {
+            ASTNode::BinaryOp {
+                operator,
+                left: Box::new(normalize_ast(*left)),
+                right: Box::new(normalize_ast(*right)),
+            }
+        }
+
+        _ => node
     }
 }
 
