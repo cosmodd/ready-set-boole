@@ -1,4 +1,3 @@
-use crate::ast::ASTNode::UnaryOp;
 use crate::ast::{ast_to_rpn, normalize_ast, parse_boolean_rpn, ASTNode};
 
 pub fn eval_formula(formula: &str) -> bool {
@@ -53,11 +52,11 @@ fn expand_negations(node: &ASTNode) -> ASTNode {
                 ASTNode::BinaryOp { operator: '&', left, right } => {
                     ASTNode::BinaryOp {
                         operator: '|',
-                        left: Box::new(expand_negations(&UnaryOp {
+                        left: Box::new(expand_negations(&ASTNode::UnaryOp {
                             operator: '!',
                             child: left.clone(),
                         })),
-                        right: Box::new(expand_negations(&UnaryOp {
+                        right: Box::new(expand_negations(&ASTNode::UnaryOp {
                             operator: '!',
                             child: right.clone()
                         })),
@@ -66,11 +65,11 @@ fn expand_negations(node: &ASTNode) -> ASTNode {
                 ASTNode::BinaryOp { operator: '|', left, right } => {
                     ASTNode::BinaryOp {
                         operator: '&',
-                        left: Box::new(expand_negations(&UnaryOp {
+                        left: Box::new(expand_negations(&ASTNode::UnaryOp {
                             operator: '!',
                             child: left.clone(),
                         })),
-                        right: Box::new(expand_negations(&UnaryOp {
+                        right: Box::new(expand_negations(&ASTNode::UnaryOp {
                             operator: '!',
                             child: right.clone()
                         })),
@@ -78,7 +77,14 @@ fn expand_negations(node: &ASTNode) -> ASTNode {
                 }
                 _ => node.clone()
             }
-        }
+        },
+        ASTNode::BinaryOp { operator, left, right} => {
+            ASTNode::BinaryOp {
+                operator: *operator,
+                left: Box::new(expand_negations(left)),
+                right: Box::new(expand_negations(right)),
+            }
+        },
         _ => node.clone()
     }
 }
