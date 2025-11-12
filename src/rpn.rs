@@ -89,11 +89,91 @@ fn expand_negations(node: &ASTNode) -> ASTNode {
     }
 }
 
+fn distribute_ors_over_ands(node: &ASTNode) -> ASTNode {
+    match node {
+        ASTNode::BinaryOp { operator: '|', left, right } => {
+            let left = distribute_ors_over_ands(left);
+            let right = distribute_ors_over_ands(right);
+
+            match (&left, &right) {
+                // (A & B) | C  =>  (A | C) & (B | C)
+                (
+                    ASTNode::BinaryOp { operator: '&', left: a, right: b },
+                    _
+                ) => {
+                    let new_left = distribute_ors_over_ands(&ASTNode::BinaryOp {
+                        operator: '|',
+                        left: a.clone(),
+                        right: Box::new(right.clone())
+                    });
+                    let new_right = distribute_ors_over_ands(&ASTNode::BinaryOp {
+                        operator: '|',
+                        left: b.clone(),
+                        right: Box::new(right.clone())
+                    });
+
+                    ASTNode::BinaryOp {
+                        operator: '&',
+                        left: Box::new(new_left),
+                        right: Box::new(new_right)
+                    }
+                }
+
+                // A | (B & C) => (A | B) & (A | C)
+                (
+                    _,
+                    ASTNode::BinaryOp { operator: '&', left: b, right: c},
+                ) => {
+                    let new_left = distribute_ors_over_ands(&ASTNode::BinaryOp {
+                        operator: '|',
+                        left: Box::new(left.clone()),
+                        right: b.clone()
+                    });
+                    let new_right = distribute_ors_over_ands(&ASTNode::BinaryOp {
+                        operator: '|',
+                        left: Box::new(left.clone()),
+                        right: c.clone()
+                    });
+
+                    ASTNode::BinaryOp {
+                        operator: '&',
+                        left: Box::new(new_left),
+                        right: Box::new(new_right),
+                    }
+                }
+
+                _ => ASTNode::BinaryOp {
+                    operator: '|',
+                    left: Box::new(left),
+                    right: Box::new(right),
+                }
+            }
+        },
+
+        ASTNode::BinaryOp { operator, left, right} => ASTNode::BinaryOp {
+            operator: *operator,
+            left: Box::new(distribute_ors_over_ands(left)),
+            right: Box::new(distribute_ors_over_ands(right)),
+        },
+
+        _ => node.clone()
+    }
+}
+
 pub fn negation_normal_form(formula: &str) -> String {
     let ast = parse_boolean_rpn(formula).unwrap();
     let norm = normalize_ast(&ast);
     let exp_negations = expand_negations(&norm);
     ast_to_rpn(&exp_negations)
+}
+
+pub fn conjunctive_normal_form(formula: &str) -> String {
+    let ast = parse_boolean_rpn(formula).unwrap();
+    let norm = normalize_ast(&ast);
+    let exp_negations = expand_negations(&norm);
+    let conj = distribute_ors_over_ands(&exp_negations);
+
+    ast_to_rpn(&conj)
 }
 
 #[cfg(test)]
@@ -117,5 +197,12 @@ mod tests {
         assert_eq!(negation_normal_form("AB>"), "A!B|");
         assert_eq!(negation_normal_form("AB="), "A!B|B!A|&");
         assert_eq!(negation_normal_form("AB|C&!"), "A!B!&C!|");
+        assert_eq!(negation_normal_form("AB&!C|"), "A!B!|C|");
+    }
+
+    #[test]
+    fn test_conjunctive_normal_form() {
+        assert_eq!(conjunctive_normal_form("AB&C|"), "AC|BC|&");
+        assert_eq!(conjunctive_normal_form("ABC&|"), "AB|AC|&");
     }
 }

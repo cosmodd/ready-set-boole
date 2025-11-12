@@ -1,5 +1,5 @@
-use crate::ast::{ast_to_rpn, normalize_ast, parse_boolean_rpn};
-use crate::rpn::negation_normal_form;
+use crate::ast::{ast_to_rpn, normalize_ast, parse_boolean_rpn, print_ast};
+use crate::rpn::{conjunctive_normal_form, negation_normal_form};
 
 mod adder;
 mod multiplier;
@@ -23,8 +23,10 @@ fn main() {
 
     truth_table::print_truth_table("AZ&A!Z!&|");
 
-    let formula = "AB=";
+    let formula = "AB=C=!";
     let ast = parse_boolean_rpn(formula).unwrap();
+    print_ast(&ast, 0);
     println!("norm(\"{}\") = \"{}\"", formula, ast_to_rpn(&normalize_ast(&ast)));
-    println!("neg(\"{}\") = \"{}\"", formula, negation_normal_form(formula));
+    println!("NNF(\"{}\") = \"{}\"", formula, negation_normal_form(formula));
+    println!("CNF(\"{}\") = \"{}\"", formula, conjunctive_normal_form(formula));
 }
